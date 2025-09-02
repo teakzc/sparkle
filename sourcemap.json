@@ -1,0 +1,1 @@
+{"name":"sparkle","className":"Folder","filePaths":["default.project.json"],"children":[{"name":"src","className":"ModuleScript","filePaths":["src/init.luau"],"children":[{"name":"define","className":"ModuleScript","filePaths":["src/define.luau"]}]}]}
