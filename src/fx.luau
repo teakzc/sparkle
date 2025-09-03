@@ -2,22 +2,24 @@
 
 local scope = require("./scope")
 
-export type fxspark = scope.Scope & {
-    clone: (self: fxspark, target: Instance) -> Instance,
-    finished: (self: fxspark) -> ()
+local spring = require("./anims/spring")
+
+export type fxscope = scope.Scope & {
+    clone: (self: fxscope, target: Instance) -> Instance,
+    finished: (self: fxscope) -> ()
 }
 
-local function constructor(): fxspark
-    local fxspark = scope() :: fxspark
+local function constructor(): fxscope
+    local fxscope = scope() :: fxscope
 
-    function fxspark.clone(self: fxspark, target: Instance): Instance
+    function fxscope.clone(self: fxscope, target: Instance): Instance
         local cloned = target:Clone()
         self:mount(cloned)
 
         return cloned
     end
 
-    function fxspark.finished(self: fxspark)
+    function fxscope.finished(self: fxscope)
         local highestlifetime = 0
         for _, v in self.children do
             if typeof(v) == "Instance" then
@@ -30,7 +32,7 @@ local function constructor(): fxspark
         end
     end
 
-    return fxspark
+    return fxscope
 end
 
 return constructor
