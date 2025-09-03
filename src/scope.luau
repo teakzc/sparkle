@@ -11,12 +11,18 @@ export type Scope = {
     innerscope: (self: Scope) -> Scope,
     mount: (self: Scope, child: Destroyable) -> Destroyable,
 
+    clone: (self: Scope, target: Instance) -> Instance,
+    delay: (self: Scope, time: number, Fn: () -> ()) -> (),
+    connect: (self: Scope, signal: RBXScriptSignal, Fn: (...any) -> ()) -> RBXScriptConnection,
+
     children: {Destroyable},
+    running: boolean
 }
 
 local function scope(): Scope
     local createdscope = {
-        children = {} :: {Destroyable}
+        children = {} :: {Destroyable},
+        running = true,
     }
 
     function createdscope.mount(self: Scope, child: Destroyable): Destroyable
@@ -38,6 +44,8 @@ local function scope(): Scope
                 child:Disconnect()
             elseif type(child) == "table" and child.destroy then
                 child:destroy()
+            elseif type(child) == "function" then
+                child()
             end
         end
 
@@ -47,6 +55,39 @@ local function scope(): Scope
 
         self =  nil :: any
     end
+
+    function createdscope.clone(self: Scope, target: Instance): Instance
+        local cloned = target:Clone()
+        self:mount(cloned)
+
+        return cloned
+    end
+
+    function createdscope.delay(self: Scope, time: number, Fn: () -> ())
+        task.delay(time, function()
+            if self.running == true then
+                Fn()
+            end
+        end)
+    end
+
+    function createdscope.connect(self: Scope, signal: RBXScriptSignal, Fn: (...any) -> ()): RBXScriptConnection
+        local connection = signal:Connect(Fn)
+        self:mount(connection)
+        return connection
+    end
+
+    function createdscope.task(self: Scope, Fn: () -> ())
+        task.spawn(function()
+            if self.running == true then
+                Fn()
+            end
+        end)
+    end
+
+    createdscope:mount(function()
+        createdscope.running = false
+    end)
 
     return createdscope
 end

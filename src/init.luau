@@ -1,14 +1,16 @@
 --!strict
 
+local scope = require("@self/scope")
+
 export type registrydir = { [string]: registrydir } | effect
 
 export type registry = { [string]: registrydir }
 
-export type effect = (sparkle: sparkle, data: { [unknown]: unknown }) -> ()
+export type effect = (fx: scope.Scope, data: { [unknown]: unknown }) -> ()
 
 export type sparkle = {
 	registry: registry,
-	scopes: {},
+	scope: scope.Scope,
 
 	register: (self: sparkle, container: Instance) -> sparkle,
 	ignite: (self: sparkle, str: string, data: { [unknown]: unknown }) -> (),
@@ -18,6 +20,7 @@ export type sparkle = {
 local function constructor(): sparkle
 	local sparkle = {
 		registry = {},
+		scope = scope()
 	} :: sparkle
 
 	local function define(container: Instance): registry
@@ -55,7 +58,9 @@ local function constructor(): sparkle
 		end
 
 		if typeof(cd) == "function" then --chosen directory is a module
-			(cd :: effect)(self, data)
+			task.spawn(function()
+				(cd :: effect)(self.scope:innerscope(), data)
+			end)
 		else
 			error("Directory is a table/folder, not a module!")
 		end
