@@ -1,55 +1,67 @@
 --!strict
 
-export type registrydir = {[string]: registrydir} | effect
+export type registrydir = { [string]: registrydir } | effect
 
-export type registry = {[string]: registrydir}
+export type registry = { [string]: registrydir }
 
-export type effect = (sparkle: sparkle, data: {[unknown]: unknown}) -> ()
+export type effect = (sparkle: sparkle, data: { [unknown]: unknown }) -> ()
 
 export type sparkle = {
-    registry: registry,
+	registry: registry,
+	scopes: {},
 
-    register: (self: sparkle, container: Instance) -> sparkle,
-    ignite: (self: sparkle, str: string) -> effect?
+	register: (self: sparkle, container: Instance) -> sparkle,
+	ignite: (self: sparkle, str: string, data: { [unknown]: unknown }) -> (),
+	clone: (self: sparkle, target: Instance) -> Instance,
 }
 
 local function constructor(): sparkle
-    local self = {
-        registry = {}
-    } :: sparkle
+	local sparkle = {
+		registry = {},
+	} :: sparkle
 
-    local function define(container: Instance): registry
-        local Result: registry = {}
+	local function define(container: Instance): registry
+		local Result: registry = {}
 
-        for _, effect in container:GetChildren() do
-            if effect:IsA("ModuleScript") then -- Register the effect into the registry
-                local _module = require(effect) :: any
-                if typeof(_module) == "function" then
-                    Result[effect.Name] = require(effect) :: effect
-                end
-            elseif effect:IsA("Folder") then -- Recursive
-                Result[effect.Name] = define(effect)
-            end
-        end
+		for _, effect in container:GetChildren() do
+			if effect:IsA("ModuleScript") then -- Register the effect into the registry
+				local _module = require(effect) :: any
+				if typeof(_module) == "function" then
+					Result[effect.Name] = require(effect) :: effect
+				end
+			elseif effect:IsA("Folder") then -- Recursive
+				Result[effect.Name] = define(effect)
+			end
+		end
 
-        return Result
-    end
+		return Result
+	end
 
-    function self.register(self: sparkle, container: Instance): sparkle
-        self.registry = define(container)
-        return self
-    end
+	function sparkle.register(self: sparkle, container: Instance): sparkle
+		self.registry = define(container)
+		return self
+	end
 
-    function self.ignite(self: sparkle, str: string): effect?
+	function sparkle.ignite(self: sparkle, str: string, data: { [unknown]: unknown })
+		local parts = string.split(str, "/")
+		local cd: any = self.registry
 
-    end
+		for _, part in parts do
+			if cd[part] then
+				cd = cd[part]
+			else
+				error(str .. " does not exist in the registry!")
+			end
+		end
 
-    return self
+		if typeof(cd) == "function" then --chosen directory is a module
+			(cd :: effect)(self, data)
+		else
+			error("Directory is a table/folder, not a module!")
+		end
+	end
+
+	return sparkle
 end
-
-
-local s = constructor()
-s:register(script)
-s:ignite()
 
 return constructor
