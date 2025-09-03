@@ -1,5 +1,7 @@
 --!strict
 
+local utils = require("./utils")
+
 export type Destroyable =
     Instance
     | RBXScriptConnection
@@ -14,6 +16,10 @@ export type Scope = {
     clone: (self: Scope, target: Instance) -> Instance,
     delay: (self: Scope, time: number, Fn: () -> ()) -> (),
     connect: (self: Scope, signal: RBXScriptSignal, Fn: (...any) -> ()) -> RBXScriptConnection,
+    task: (self: Scope, Fn: () -> ()) -> (),
+
+    emit: (self: Scope, target: Instance) -> (),
+    toggle: (self: Scope, target: Instance, state: boolean) -> (),
 
     children: {Destroyable},
     running: boolean
@@ -83,6 +89,14 @@ local function scope(): Scope
                 Fn()
             end
         end)
+    end
+
+    function createdscope.emit(self: Scope, target: Instance)
+        utils.emit(self, target)
+    end
+
+    function createdscope.toggle(self: Scope, target: Instance, state: boolean)
+        utils.toggle(target, state)
     end
 
     createdscope:mount(function()
