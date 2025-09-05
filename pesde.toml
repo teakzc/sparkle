@@ -1,5 +1,5 @@
 name = "teakzc/sparkle"
-version = "0.1.0"
+version = "0.0.1"
 description = "vfx management library"
 authors = ["teakzc"]
 repository = "https://github.com/teakzc/sparkle"
