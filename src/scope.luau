@@ -22,13 +22,21 @@ export type Scope = {
     toggle: (self: Scope, target: Instance, state: boolean) -> (),
 
     children: {Destroyable},
-    running: boolean
+    running: boolean,
+    registry: registry
 }
 
-local function scope(): Scope
+type effect = (fx: Scope, data: { [unknown]: unknown }) -> ()
+
+type registrydir = { [string]: registrydir } | effect
+
+type registry = { [string]: registrydir }
+
+local function scope(registry: registry): Scope
     local createdscope = {
         children = {} :: {Destroyable},
         running = true,
+        registry = registry
     }
 
     function createdscope.mount(self: Scope, child: Destroyable): Destroyable
@@ -37,7 +45,7 @@ local function scope(): Scope
     end
 
     function createdscope.innerscope(self: Scope): Scope
-        local innerscope = scope()
+        local innerscope = scope(self.registry)
         self:mount(innerscope)
         return innerscope
     end
@@ -98,6 +106,27 @@ local function scope(): Scope
     function createdscope.toggle(self: Scope, target: Instance, state: boolean)
         utils.toggle(target, state)
     end
+
+    function createdscope.ignite(self: Scope, str: string, data: { [unknown]: unknown })
+		local parts = string.split(str, "/")
+		local cd: any = self.registry
+
+		for _, part in parts do
+			if cd[part] then
+				cd = cd[part]
+			else
+				error(str .. " does not exist in the registry!")
+			end
+		end
+
+		if typeof(cd) == "function" then --chosen directory is a module
+			task.spawn(function()
+				(cd :: effect)(self:innerscope(), data)
+			end)
+		else
+			error("Directory is a table/folder, not a module!")
+		end
+	end
 
     createdscope:mount(function()
         createdscope.running = false

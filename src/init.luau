@@ -20,7 +20,6 @@ export type sparkle = {
 local function constructor(): sparkle
 	local sparkle = {
 		registry = {},
-		scope = scope()
 	} :: sparkle
 
 	local function define(container: Instance): registry
@@ -42,6 +41,7 @@ local function constructor(): sparkle
 
 	function sparkle.register(self: sparkle, container: Instance): sparkle
 		self.registry = define(container)
+		self.scope = scope(self.registry)
 		return self
 	end
 
