@@ -21,6 +21,8 @@ export type Scope = {
     emit: (self: Scope, target: Instance) -> (),
     toggle: (self: Scope, target: Instance, state: boolean) -> (),
 
+    ignite: (self: Scope, str: string, data: { [unknown]: unknown }) -> (),
+
     children: {Destroyable},
     running: boolean,
     registry: registry

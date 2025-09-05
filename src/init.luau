@@ -45,27 +45,6 @@ local function constructor(): sparkle
 		return self
 	end
 
-	function sparkle.ignite(self: sparkle, str: string, data: { [unknown]: unknown })
-		local parts = string.split(str, "/")
-		local cd: any = self.registry
-
-		for _, part in parts do
-			if cd[part] then
-				cd = cd[part]
-			else
-				error(str .. " does not exist in the registry!")
-			end
-		end
-
-		if typeof(cd) == "function" then --chosen directory is a module
-			task.spawn(function()
-				(cd :: effect)(self.scope:innerscope(), data)
-			end)
-		else
-			error("Directory is a table/folder, not a module!")
-		end
-	end
-
 	return sparkle
 end
 
